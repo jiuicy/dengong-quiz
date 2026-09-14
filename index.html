@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电工四级刷题</title>
+<script src="questions.js"></script>
+<style>
+  :root {
+    --bg: #f3f5f9; --card: #ffffff; --ink: #1e2430; --muted: #7a8299;
+    --brand: #2563eb; --brand-weak: #dbe6ff;
+    --ok: #16a34a; --ok-weak: #e3f6ec; --bad: #dc2626; --bad-weak: #fdeaea;
+    --line: #e4e8f0; --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 16px;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ===== 首页 ===== */
+  #home { max-width: 860px; width: 100%; margin: 0 auto; padding: 28px 20px 40px; }
+  .app-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .app-head h1 { font-size: 26px; letter-spacing: 1px; }
+  .app-head .sub { color: var(--muted); font-size: 13px; }
+  .home-tip { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .store-warn {
+    display: none; background: #fff3df; color: #b45309; border-radius: 10px;
+    padding: 10px 14px; font-size: 13.5px; margin-bottom: 16px;
+  }
+  .deck {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px;
+    transition: box-shadow .15s;
+  }
+  .deck:hover { box-shadow: 0 4px 16px rgba(30, 40, 70, .08); }
+  .deck .info { flex: 1; min-width: 0; }
+  .deck .name { font-size: 16.5px; font-weight: 600; }
+  .deck .meta { color: var(--muted); font-size: 12.5px; margin-top: 5px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; margin-top: 9px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
+  .deck .go {
+    border: none; background: var(--brand); color: #fff; border-radius: 10px;
+    padding: 10px 22px; font-size: 15px; white-space: nowrap;
+  }
+  .deck .go:hover { filter: brightness(1.08); }
+  .deck.special { border-style: dashed; }
+  .deck.special .go { background: var(--ink); }
+
+  /* ===== 刷题页 ===== */
+  #quiz { display: none; flex-direction: column; height: 100vh; }
+  .q-top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; background: var(--card); border-bottom: 1px solid var(--line);
+  }
+  .q-top .back { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+  .q-top .deckname { font-weight: 600; font-size: 15px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-top .pos { color: var(--muted); font-size: 13px; }
+  .q-progress { height: 4px; background: var(--line); }
+  .q-progress > i { display: block; height: 100%; background: var(--brand); transition: width .2s; }
+
+  .q-body { flex: 1; overflow-y: auto; }
+  .q-wrap { max-width: 780px; margin: 0 auto; padding: 26px 20px 30px; }
+  .q-tags { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tag { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--brand-weak); color: var(--brand); }
+  .tag.warn { background: #fff3df; color: #b45309; }
+  .stem { font-size: 18px; line-height: 1.75; margin-bottom: 22px; white-space: pre-wrap; }
+
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 12px; text-align: left;
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 13px 16px; font-size: 16px; line-height: 1.6; transition: border-color .12s, background .12s;
+  }
+  .opt:not(:disabled):hover { border-color: var(--brand); }
+  .opt .letter {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); font-size: 13.5px; font-weight: 700; color: var(--muted); margin-top: 1px;
+  }
+  .opt.correct { border-color: var(--ok); background: var(--ok-weak); }
+  .opt.correct .letter { background: var(--ok); color: #fff; }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-weak); }
+  .opt.wrong .letter { background: var(--bad); color: #fff; }
+  .opt:disabled { cursor: default; opacity: .92; }
+
+  .judge-row { display: flex; gap: 14px; }
+  .judge-btn {
+    flex: 1; padding: 20px; font-size: 20px; font-weight: 700; border-radius: 12px;
+    border: 1.5px solid var(--line); background: var(--card);
+  }
+  .judge-btn:not(:disabled):hover { border-color: var(--brand); }
+  .judge-btn.correct { border-color: var(--ok); background: var(--ok-weak); color: var(--ok); }
+  .judge-btn.wrong { border-color: var(--bad); background: var(--bad-weak); color: var(--bad); }
+
+  .feedback { margin-top: 18px; border-radius: 10px; padding: 12px 16px; font-size: 15px; display: none; }
+  .feedback.ok { display: block; background: var(--ok-weak); color: var(--ok); }
+  .feedback.bad { display: block; background: var(--bad-weak); color: var(--bad); }
+
+  .q-bottom {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px; background: var(--card); border-top: 1px solid var(--line);
+  }
+  .q-bottom .stat { flex: 1; font-size: 13px; color: var(--muted); }
+  .nav { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 20px; font-size: 14.5px; }
+  .nav.main { background: var(--brand); color: #fff; border: none; }
+  .nav:disabled { opacity: .4; cursor: default; }
+
+  .done { max-width: 520px; margin: 8vh auto; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 44px 30px; }
+  .done h2 { font-size: 24px; margin-bottom: 10px; }
+  .done .big { font-size: 44px; font-weight: 800; color: var(--brand); margin: 14px 0 4px; }
+  .done p { color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+  .done .row { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }
+
+  @media (max-width: 560px) {
+    .stem { font-size: 17px; }
+    .deck .go { padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="home">
+  <div class="app-head"><h1>⚡ 电工四级刷题</h1><span class="sub">共 <span id="total-count"></span> 题</span></div>
+  <div class="home-tip">题目提取自《电工四级理论知识复习题》与《电工（四级）应会指导手册（第三版）》，答题进度自动保存在本机。</div>
+  <div class="store-warn" id="store-warn">⚠ 当前打开方式无法保存进度（每次关闭后作答记录会丢失）。请改用「电工四级刷题.vbs」启动，或换用 Edge / Chrome 浏览器打开本文件。</div>
+  <div id="deck-list"></div>
+</div>
+
+<!-- 刷题页 -->
+<div id="quiz">
+  <div class="q-top">
+    <button class="back" id="btn-back">← 返回</button>
+    <div class="deckname" id="q-deckname"></div>
+    <label class="pos" style="display:flex;align-items:center;gap:5px;cursor:pointer">
+      <input type="checkbox" id="shuffle-toggle" style="accent-color:#2563eb"> 随机
+    </label>
+  </div>
+  <div class="q-progress"><i id="q-bar" style="width:0%"></i></div>
+  <div class="q-body" id="q-scroll">
+    <div class="q-wrap" id="q-main"></div>
+  </div>
+  <div class="q-bottom">
+    <div class="stat" id="q-stat"></div>
+    <button class="nav" id="btn-prev">上一题</button>
+    <button class="nav main" id="btn-next">下一题</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 存储（file:// 下 localStorage 不可用时自动降级为内存） ---------- */
+let storageOK = true;
+const store = (() => {
+  try { const k='__t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return localStorage; }
+  catch (e) { storageOK = false; console.warn('localStorage 不可用，进度仅本次有效'); const m={}; return { getItem:k=>m[k]??null, setItem:(k,v)=>{m[k]=String(v);}, removeItem:k=>{delete m[k];} }; }
+})();
+const KEY = 'dg4-app-v1';
+const load = () => { try { return JSON.parse(store.getItem(KEY)) || {}; } catch { return {}; } };
+const save = s => store.setItem(KEY, JSON.stringify(s));
+let S = load(); // { wrong:{qid:true}, decks:{ gid:{ i, ans:{i:0|1}, shuffle } }, doneShown:{gid:true} }
+
+/* ---------- 题库 ---------- */
+const BANK = window.BANK;
+const allQuestions = BANK.flatMap(d => d.questions);
+const qidMap = new Map(allQuestions.map(q => [q.qid, q]));
+
+/* ---------- 首页 ---------- */
+const $ = id => document.getElementById(id);
+function deckStats(gid) {
+  const st = (S.decks || {})[gid] || { ans: {} };
+  const answered = Object.keys(st.ans).length;
+  const correct = Object.values(st.ans).filter(v => v === 1).length;
+  return { answered, correct };
+}
+function renderHome() {
+  $('total-count').textContent = allQuestions.length;
+  const list = $('deck-list');
+  list.innerHTML = '';
+  const mkDeck = (name, meta, total, answered, correct, btnText, onClick, special) => {
+    const el = document.createElement('div');
+    el.className = 'deck' + (special ? ' special' : '');
+    const pct = total ? Math.round(answered / total * 100) : 0;
+    el.innerHTML =
+      '<div class="info"><div class="name"></div>' +
+      '<div class="meta"><span>' + meta + '</span>' +
+      (answered ? '<span>已刷 ' + answered + '/' + total + ' · 正确 ' + correct + '（' + Math.round(correct / answered * 100) + '%）</span>'
+                : '<span>未开始</span>') + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div></div>' +
+      '<button class="go">' + btnText + '</button>';
+    el.querySelector('.name').textContent = name;
+    el.querySelector('.go').onclick = onClick;
+    list.appendChild(el);
+  };
+  BANK.forEach((d, gid) => {
+    const st = deckStats(gid);
+    mkDeck(d.name, '共 ' + d.count + ' 题（判断 ' + d.judge + ' / 单选 ' + d.single + '）',
+      d.count, st.answered, st.correct, st.answered ? '继续' : '开始', () => startDeck(gid));
+  });
+  const wrongIds = Object.keys(S.wrong || {});
+  mkDeck('📕 错题本', wrongIds.length ? '共 ' + wrongIds.length + ' 道错题 · 答对自动移出' : '暂无错题，答错的题会自动收录',
+    wrongIds.length, 0, 0, wrongIds.length ? '刷错题' : '—',
+    () => { if (wrongIds.length) startWrong(); }, true);
+}
+$('btn-back').onclick = () => { $('quiz').style.display = 'none'; $('home').style.display = 'block'; renderHome(); };
+
+/* ---------- 刷题 ---------- */
+let cur = null; // { deckName, qs:[...], gid, wrongMode }
+function startDeck(gid) {
+  S.decks = S.decks || {}; S.decks[gid] = S.decks[gid] || { i: 0, ans: {}, picks: {} };
+  const st = S.decks[gid];
+  const base = BANK[gid].questions;
+  let qs;
+  if (st.order && st.order.length === base.length) qs = st.order.map(i => base[i]); // 恢复上次顺序
+  else if (st.shuffle) { st.order = shuffleIdx(base.length); qs = st.order.map(i => base[i]); }
+  else qs = base.slice();
+  cur = { deckName: BANK[gid].name, qs, gid, wrongMode: false, st };
+  $('shuffle-toggle').checked = !!st.shuffle;
+  enterQuiz(st.i);
+}
+function startWrong() {
+  const qs = Object.keys(S.wrong || {}).map(qid => qidMap.get(qid)).filter(Boolean);
+  if (!qs.length) return;
+  shuffle(qs);
+  cur = { deckName: '错题本', qs, gid: -1, wrongMode: true, st: { i: 0, ans: {}, picks: {} } };
+  $('shuffle-toggle').checked = true;
+  enterQuiz(0);
+}
+$('shuffle-toggle').onchange = function () {
+  if (!cur || cur.wrongMode) return;
+  const answered = Object.keys(cur.st.ans).length;
+  if (answered && !confirm('切换顺序将重置本册的作答记录，确定吗？')) {
+    this.checked = !this.checked; return;
+  }
+  cur.st = { i: 0, ans: {}, picks: {}, shuffle: this.checked };
+  const base = BANK[cur.gid].questions;
+  if (this.checked) { cur.st.order = shuffleIdx(base.length); cur.qs = cur.st.order.map(i => base[i]); }
+  else { cur.qs = base.slice(); }
+  enterQuiz(0);
+  saveAll();
+};
+function shuffleIdx(n) {
+  const a = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } }
+
+function enterQuiz(i) {
+  cur.st.i = Math.max(0, Math.min(i, cur.qs.length - 1));
+  $('home').style.display = 'none';
+  $('quiz').style.display = 'flex';
+  renderQ();
+}
+function saveAll() {
+  if (cur && !cur.wrongMode) {
+    S.decks = S.decks || {}; S.decks[cur.gid] = cur.st;
+    if (cur.st.order) cur.st.order = cur.qs.map(q => BANK[cur.gid].questions.indexOf(q));
+  }
+  save(S);
+}
+
+function renderQ() {
+  const st = cur.st, idx = st.i, q = cur.qs[idx];
+  const main = $('q-main');
+  $('q-deckname').textContent = cur.deckName;
+  $('q-bar').style.width = ((idx + 1) / cur.qs.length * 100) + '%';
+  $('q-scroll').scrollTop = 0;
+
+  const chosen = st.ans[idx];           // 0=错 1=对（仅已答）
+  const answered = chosen !== undefined;
+  const dis = answered ? ' disabled' : '';
+  // 正确答案在本题里的"位置"：判断题用 'T'/'F'，单选用选项下标
+  const correctV = q.type === 'judge' ? (q.answer ? 'T' : 'F') : 'ABCD'.indexOf(q.answer);
+  const userV = (st.picks || {})[idx];
+  const cls = v => {
+    if (!answered) return '';
+    let c = '';
+    if (v === correctV) c += ' correct';
+    if (v === userV && chosen === 0) c += ' wrong';
+    return c;
+  };
+
+  let optsHtml;
+  if (q.type === 'judge') {
+    optsHtml = '<div class="judge-row">' +
+      '<button class="judge-btn' + cls('T') + '" data-v="T"' + dis + '>✓ 正确</button>' +
+      '<button class="judge-btn' + cls('F') + '" data-v="F"' + dis + '>✗ 错误</button></div>';
+  } else {
+    optsHtml = '<div class="opts">' + q.options.map((o, i) =>
+      '<button class="opt' + cls(i) + '" data-v="' + i + '"' + dis + '>' +
+      '<span class="letter">' + 'ABCD'[i] + '</span><span class="txt"></span></button>').join('') + '</div>';
+  }
+  main.innerHTML =
+    '<div class="q-tags"><span class="tag">' + (q.type === 'judge' ? '判断题' : '单选题') + '</span>' +
+    '<span class="tag">' + (idx + 1) + ' / ' + cur.qs.length + '</span>' +
+    (q.fig ? '<span class="tag warn">原题配图 · 仅文字</span>' : '') + '</div>' +
+    '<div class="stem"></div>' + optsHtml +
+    '<div class="feedback" id="fb"></div>';
+  main.querySelector('.stem').textContent = q.stem;
+  if (q.type === 'single') {
+    main.querySelectorAll('.opt').forEach((el, i) => {
+      el.querySelector('.txt').textContent = q.options[i];
+      el.onclick = () => answer(i);
+    });
+  } else {
+    main.querySelectorAll('.judge-btn').forEach(el => { el.onclick = () => answer(el.dataset.v === 'T'); });
+  }
+  if (answered) showFb(chosen === 1, q);
+
+  $('btn-prev').disabled = idx === 0;
+  $('btn-next').textContent = idx === cur.qs.length - 1 ? '完成' : '下一题';
+  const done = Object.keys(st.ans).length;
+  const right = Object.values(st.ans).filter(v => v === 1).length;
+  $('q-stat').textContent = '已答 ' + done + '/' + cur.qs.length + ' · 正确 ' + right + (done ? '（' + Math.round(right / done * 100) + '%）' : '');
+  saveAll();
+}
+
+function answer(v) {
+  const st = cur.st, idx = st.i, q = cur.qs[idx];
+  if (st.ans[idx] !== undefined) return;
+  const correct = q.type === 'judge' ? v === q.answer : 'ABCD'[v] === q.answer;
+  st.ans[idx] = correct ? 1 : 0;
+  st.picks = st.picks || {}; st.picks[idx] = q.type === 'judge' ? (v ? 'T' : 'F') : v;
+  if (!correct) { S.wrong = S.wrong || {}; S.wrong[q.qid] = true; }
+  else if (cur.wrongMode) { delete S.wrong[q.qid]; }
+  saveAll();
+  renderQ();
+}
+function showFb(ok, q) {
+  const fb = $('fb');
+  fb.className = 'feedback ' + (ok ? 'ok' : 'bad');
+  fb.textContent = ok ? '✓ 回答正确' : '✗ 回答错误 · 正确答案：' + (q.type === 'judge' ? (q.answer ? '正确 √' : '错误 ×') : q.answer);
+}
+
+$('btn-prev').onclick = () => { if (cur.st.i > 0) enterQuiz(cur.st.i - 1); };
+$('btn-next').onclick = () => {
+  const st = cur.st;
+  if (st.i < cur.qs.length - 1) { enterQuiz(st.i + 1); return; }
+  const done = Object.keys(st.ans).length;
+  const right = Object.values(st.ans).filter(v => v === 1).length;
+  showDone(done, right, cur.qs.length);
+};
+function showDone(done, right, total) {
+  $('q-main').innerHTML =
+    '<div class="done"><h2>' + (done >= total ? '🎉 本册刷完啦' : '本次进度') + '</h2>' +
+    '<div class="big">' + (done ? Math.round(right / done * 100) : 0) + '%</div>' +
+    '<p>共 ' + total + ' 题 · 已答 ' + done + ' · 正确 ' + right + '</p>' +
+    '<div class="row"><button class="nav" id="d-home">返回题库</button>' +
+    (cur.wrongMode ? '' : '<button class="nav main" id="d-redo">重刷本册</button>') + '</div></div>';
+  $('d-home').onclick = () => { $('quiz').style.display = 'none'; $('home').style.display = 'block'; renderHome(); };
+  const redo = $('d-redo');
+  if (redo) redo.onclick = () => {
+    const keepShuffle = !!cur.st.shuffle;
+    cur.st = { i: 0, ans: {}, picks: {}, shuffle: keepShuffle };
+    const base = BANK[cur.gid].questions;
+    if (keepShuffle) { cur.st.order = shuffleIdx(base.length); cur.qs = cur.st.order.map(i => base[i]); }
+    else cur.qs = base.slice();
+    enterQuiz(0);
+  };
+  saveAll();
+}
+
+/* ---------- 键盘 ---------- */
+document.addEventListener('keydown', e => {
+  if ($('quiz').style.display === 'none' || !cur) return;
+  if (e.key === 'ArrowLeft') $('btn-prev').click();
+  else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); $('btn-next').click(); }
+  else {
+    const q = cur.qs[cur.st.i];
+    if (cur.st.ans[cur.st.i] !== undefined) return;
+    if (q.type === 'judge') { if (e.key === '1') answer(true); else if (e.key === '2') answer(false); }
+    else {
+      const m = { a: 0, b: 1, c: 2, d: 3, 1: 0, 2: 1, 3: 2, 4: 3 };
+      const v = m[e.key.toLowerCase()];
+      if (v !== undefined && v < q.options.length) answer(v);
+    }
+  }
+});
+
+renderHome();
+if (!storageOK) document.getElementById('store-warn').style.display = 'block';
+</script>
+</body>
+</html>
